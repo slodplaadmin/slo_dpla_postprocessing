@@ -47,7 +47,7 @@
 
       <!-- RECOMMENDED ODN-MAP fields -->
       <xsl:apply-templates select="dc:language"              mode="odn"/>                     <!-- create dcterms:language                                    -->
-      <xsl:apply-templates select="dc:creator"               mode="odn"/>                     <!-- create dcterms:creator                                     -->
+      <xsl:apply-templates select="dc:creator"               mode="plochc_p16998coll63"/>     <!-- create dcterms:creator                                     -->
       <xsl:apply-templates select="dc:date"                  mode="plochc_p16998coll63"/>     <!-- create dc:date                                             -->
       <xsl:apply-templates select="dc:format"                mode="plochc_p16998coll63"/>     <!-- create dc:format                                           -->
       <xsl:copy-of         select="dcterms:spatial"          copy-namespaces="no"/>           <!-- create dcterms:spatial                                     -->
@@ -60,7 +60,7 @@
       <xsl:apply-templates select="dc:description"           mode="odn"/>                     <!-- create dcterms:description                                 -->
       <xsl:apply-templates select="dcterms:extent"           mode="plochc_p16998coll63"/>     <!-- create dcterms:extent                                      -->
                                                                                               <!-- dcterms:identifier is created above as part of the edm:isShownAt transform -->
-      <xsl:copy-of         select="dcterms:isReferencedBy"   copy-namespaces="no"/>           <!-- create IIIF metadata                                       -->
+      <xsl:apply-templates select="dcterms:isReferencedBy"   mode="odn"/>                     <!-- eliminate by default; use dcterms:isReferencedBy for Wikimedia data  -->
       <xsl:apply-templates select="dc:publisher"             mode="plochc_p16998coll63"/>     <!-- create dcterms:publisher                                   -->
       <xsl:apply-templates select="dc:relation"              mode="plochc_p16998coll63"/>     <!-- create dc:relation                                         -->
       <xsl:apply-templates select="dcterms:isPartOf"         mode="odn"/>                     <!-- create dc:relation                                         -->
@@ -131,5 +131,16 @@
       </xsl:if>
     </xsl:for-each>
   </xsl:template>
+
+  <xsl:template match="dc:creator" mode="plochc_p16998coll63">
+    <xsl:for-each select="tokenize(., ';')">
+      <xsl:if test="normalize-space(.) != ''">
+        <xsl:element name="dcterms:creator" namespace="http://purl.org/dc/terms/">
+          <xsl:value-of select="normalize-space(.)"/>
+        </xsl:element>
+      </xsl:if>
+    </xsl:for-each>
+  </xsl:template>
+
 
 </xsl:stylesheet>

@@ -24,7 +24,7 @@
   <xsl:include href="odn_templates.xsl"/>
 
   
-  
+ 
   <xsl:template match="//oai_dc:dc">
     <oai_qdc:qualifieddc
             xmlns:oai_qdc="http://worldcat.org/xmlschemas/qdc-1.0/"
@@ -60,7 +60,7 @@
       <xsl:apply-templates select="dc:description"           mode="kent_omeka8"/>             <!-- create dcterms:description                                 -->
       <xsl:apply-templates select="dcterms:extent"           mode="odn"/>                     <!-- create dcterms:extent                                      -->
                                                                                               <!-- dcterms:identifier is created above as part of the edm:isShownAt transform -->
-      <xsl:copy-of         select="dcterms:isReferencedBy"   copy-namespaces="no"/>           <!-- create IIIF metadata                                       -->
+      <xsl:apply-templates select="dcterms:isReferencedBy"   mode="odn"/>                     <!-- eliminate by default; use dcterms:isReferencedBy for Wikimedia data  -->
       <xsl:apply-templates select="dc:publisher"             mode="odn"/>                     <!-- create dcterms:publisher                                   -->
       <xsl:apply-templates select="dc:relation"              mode="odn"/>                     <!-- create dc:relation                                         -->
       <xsl:apply-templates select="dcterms:isPartOf"         mode="odn"/>                     <!-- create dc:relation                                         -->
@@ -80,7 +80,7 @@
 
   <xsl:template match="dc:description" mode="kent_omeka8">
     <xsl:element name="dcterms:description" namespace="http://purl.org/dc/terms/">
-      <xsl:value-of select="replace(replace(replace(replace(replace(., '&lt;a href=&quot;', ''), '&lt;/?em&gt;', ''), '&lt;br /&gt;', ''), '&lt;/a&gt;', ''), '&quot;&gt;', ' ')"/>
+      <xsl:value-of select="replace(replace(replace(replace(replace(replace(., '&lt;/?p&gt;', ''), '&lt;a href=&quot;', ''), '&lt;/?(em|span)&gt;', ''), '&lt;br /&gt;', ''), '&lt;/a&gt;', ''), '&quot;&gt;', ' ')"/>
     </xsl:element>
   </xsl:template>
 

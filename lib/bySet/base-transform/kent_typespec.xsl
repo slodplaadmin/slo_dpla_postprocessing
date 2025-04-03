@@ -60,7 +60,7 @@
       <xsl:apply-templates select="dc:description"           mode="kent_typespec"/>           <!-- create dcterms:description                                 -->
       <xsl:apply-templates select="dcterms:extent"           mode="odn"/>                     <!-- create dcterms:extent                                      -->
                                                                                               <!-- dcterms:identifier is created above as part of the edm:isShownAt transform -->
-      <xsl:copy-of         select="dcterms:isReferencedBy"   copy-namespaces="no"/>           <!-- create IIIF metadata                                       -->
+      <xsl:apply-templates select="dcterms:isReferencedBy"   mode="odn"/>                     <!-- eliminate by default; use dcterms:isReferencedBy for Wikimedia data  -->
       <xsl:apply-templates select="dc:publisher"             mode="odn"/>                     <!-- create dcterms:publisher                                   -->
       <xsl:apply-templates select="dc:relation"              mode="odn"/>                     <!-- create dc:relation                                         -->
       <xsl:apply-templates select="dcterms:isPartOf"         mode="odn"/>                     <!-- create dc:relation                                         -->
@@ -85,7 +85,7 @@
       </xsl:when>
       <xsl:otherwise>
         <xsl:element name="dcterms:description" namespace="http://purl.org/dc/terms/">
-          <xsl:value-of select="replace(replace(replace(replace(replace(., '&amp;nbsp;', ' '), '&lt;em&gt;', ''), '&lt;p&gt;', ''), '&lt;/em&gt;', ''), '&lt;/p&gt;', '')"/>
+          <xsl:value-of select="normalize-space(replace(replace(., '&lt;/?(p|em|strong)&gt;', ''), '&amp;nbsp;', ''))"/>
         </xsl:element>
       </xsl:otherwise>
     </xsl:choose>

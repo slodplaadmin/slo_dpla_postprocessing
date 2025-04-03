@@ -1,4 +1,8 @@
 """Harvest Metadata from an OAI-PMH Feed."""
+#
+# Thanks to CM Harlow for this code.
+# https://github.com/cmharlow/metadataQA/blob/1c680d94241082abf79fc28898e5252f1441b313/harvest/harvestOAI.py
+#
 from __future__ import unicode_literals
 import requests
 import zlib
@@ -26,9 +30,13 @@ def getFile(link, command, sleepTime=0):
     remoteAddr = link + '?verb=%s' % command
     print("\t getFile ... %s" % remoteAddr[-90:])
 
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36'
+    }
+
     # Handle HTTP Response (Including Common Errors) from OAI-PMH Endpoint
     try:
-        resp = requests.get(remoteAddr)
+        resp = requests.get(remoteAddr, headers=headers, verify=False)
         if resp.status_code != 200 and resp.status_code != 301:
             resp.raise_for_status()
         elif resp.status_code == 301:

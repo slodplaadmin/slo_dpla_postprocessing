@@ -5,6 +5,11 @@
 
 -->
 <?php
-echo "<p>This is the sloapp-home.php content.</p><p>This will be the GUI admin console for the application that will replace REPOX in the Ohio Digital Network's preparation and processing of data for DPLA.</p>";
-echo "<br><br><p>Note to self:  Add to this page tallies of... providers, total records, IIIF records, contributed sets</p>";
+echo "<p>This a console for the application that will replace REPOX in the Ohio Digital Network's preparation and processing of data for DPLA.</p>
+
+<p>This web interface only gives one the ability to view what happening in the system.  It cannot be used to make changes.</p>
+
+<p>If you're unsure what do to next, you might look at <a href='doc/.?action=doc-base'>the little documentation</a> there is to be had.</p>
+";
+
 ?>

@@ -37,7 +37,7 @@
                                 http://worldcat.org/xmlschemas/oclcterms/1.4/oclcterms-1.4.xsd">
 
       <!-- STATIC VALUES FOR ODN-MAP fields -->
-      <xsl:element name="edm:dataProvider" namespace="http://www.europeana.eu/schemas/edm/">Kent State University Libraries</xsl:element>     <!-- create edm:dataProvider -->
+      <xsl:element name="edm:dataProvider" namespace="http://www.europeana.eu/schemas/edm/">Kent State University</xsl:element>     <!-- create edm:dataProvider -->
       <xsl:element name="dcterms:isPartOf" namespace="http://purl.org/dc/terms/">Trumbull Gelbke Library</xsl:element>              <!-- create dcterms:isPartOf -->
 
       <!-- REQUIRED ODN-MAP FIELDS -->
@@ -60,7 +60,7 @@
       <xsl:apply-templates select="dc:description"           mode="kent_tglibrary"/>          <!-- create dcterms:description                                 -->
       <xsl:apply-templates select="dcterms:extent"           mode="odn"/>                     <!-- create dcterms:extent                                      -->
                                                                                               <!-- dcterms:identifier is created above as part of the edm:isShownAt transform -->
-      <xsl:copy-of         select="dcterms:isReferencedBy"   copy-namespaces="no"/>           <!-- create IIIF metadata                                       -->
+      <xsl:apply-templates select="dcterms:isReferencedBy"   mode="odn"/>                     <!-- eliminate by default; use dcterms:isReferencedBy for Wikimedia data  -->
       <xsl:apply-templates select="dc:publisher"             mode="odn"/>                     <!-- create dcterms:publisher                                   -->
       <xsl:apply-templates select="dc:relation"              mode="odn"/>                     <!-- create dc:relation                                         -->
       <xsl:apply-templates select="dcterms:isPartOf"         mode="odn"/>                     <!-- create dc:relation                                         -->

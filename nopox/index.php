@@ -59,6 +59,30 @@ e.g   http://servername/index.php?action=home
     elseif ($sloappAction == "notYet") {
        include "sloapp-notYet.php";
     }
+    elseif ($sloappAction=="list-rights") {
+       include "sloapp-list-by-rights.php";
+    }
+    elseif ($sloappAction=="list-all-rights") {
+       include "sloapp-rights-full-list.php";
+    }
+    elseif ($sloappAction=="list-harvests") {
+       include "sloapp-list-harvests.php";
+    }
+    elseif ($sloappAction=="count-sets-by-org") {
+       include "sloapp-list-set-counts-by-org.php";
+    }
+    elseif ($sloappAction=="list-providers-by-cms") {
+       include "sloapp-list-providers-by-CMS.php";
+    }
+    elseif ($sloappAction=="list-iiif-counts") {
+       include "sloapp-list-iiif-counts.php";
+    }
+    elseif ($sloappAction=="doc-base") {
+       include "doc/?action=doc-base.php";
+    }
+    elseif ($sloappAction=="report-counts-overview") {
+       include "sloapp-report-counts-overview.php";
+    }
     else {
        include "sloapp-home.php";
        error_log("Unknown directive received: " . $sloappAction . ";  Redirecting to home tab");

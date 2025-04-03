@@ -49,7 +49,7 @@
       <!-- RECOMMENDED ODN-MAP fields -->
       <xsl:apply-templates select="dc:language"              mode="cml_p16802coll36"/>        <!-- create dcterms:language                                    -->
       <xsl:apply-templates select="dc:creator"               mode="odn"/>                     <!-- create dcterms:creator                                     -->
-      <xsl:copy-of         select="dc:date"                  copy-namespaces="no"/>           <!-- create dc:date                                             -->
+      <xsl:apply-templates select="dc:date"                  mode="cml_p16802coll36"/>           <!-- create dc:date                                             -->
       <xsl:apply-templates select="dc:format"                mode="odn"/>                     <!-- create dc:format                                           -->
       <xsl:apply-templates select="dc:subject"               mode="odn"/>                     <!-- create dcterms:subject                                     -->
       <xsl:apply-templates select="dc:type"                  mode="cml_p16802coll36"/>        <!-- create dcterms:type                                        -->
@@ -60,7 +60,7 @@
       <xsl:apply-templates select="dc:description"           mode="odn"/>                     <!-- create dcterms:description                                 -->
       <xsl:apply-templates select="dcterms:extent"           mode="cml_p16802coll36"/>        <!-- create dcterms:extent                                      -->
                                                                                               <!-- dcterms:identifier is created above as part of the edm:isShownAt transform -->
-      <xsl:copy-of         select="dcterms:isReferencedBy"   copy-namespaces="no"/>           <!-- create IIIF metadata                                       -->
+      <xsl:apply-templates select="dcterms:isReferencedBy"   mode="odn"/>                     <!-- eliminate by default; use dcterms:isReferencedBy for Wikimedia data  -->
       <xsl:apply-templates select="dc:publisher"             mode="cml_p16802coll36"/>        <!-- create dcterms:publisher                                   -->
       <xsl:apply-templates select="dc:relation"              mode="odn"/>                     <!-- create dc:relation                                         -->
       <xsl:apply-templates select="dcterms:isPartOf"         mode="cml_p16802coll36"/>        <!-- create dc:relation                                         -->
@@ -96,6 +96,17 @@
     <xsl:for-each select="tokenize(., ';')">
       <xsl:if test="(normalize-space(.) != '')">
         <xsl:element name="dcterms:spatial" namespace="http://purl.org/dc/terms/">
+          <xsl:value-of select="normalize-space(.)"/>
+        </xsl:element>
+      </xsl:if>
+    </xsl:for-each>
+  </xsl:template>
+
+
+  <xsl:template match="dc:date" mode="cml_p16802coll36">
+    <xsl:for-each select="tokenize(., ';')">
+      <xsl:if test="(normalize-space(.) != '')">
+        <xsl:element name="dc:date" namespace="http://purl.org/dc/elements/1.1/">
           <xsl:value-of select="normalize-space(.)"/>
         </xsl:element>
       </xsl:if>

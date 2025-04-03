@@ -8,9 +8,42 @@
 # based on that input, resulting in the creation of SQL which would
 # be run against the MySQL database to add the new set.
 #
-#  
-#
 
+# preliminary checks to confirm environment is configured
+
+if [ "$SLODPLA_ROOT" == "" ]
+then
+    cat <<'    EOF'
+    -- ERROR --
+    The SLODPLA_ROOT environment variable is not set.
+    Aborting.
+    EOF
+    exit
+fi
+
+
+if [ ! -f ~/.my.cnf  ]
+then
+    cat <<'    EOF'
+
+    -- ERROR --
+    No '~/.my.cnf' file found; Required for MySQL login.
+    Either create the file, or confirm that permissions
+    are correct on the existing file.
+
+    EOF
+    exit
+fi
+
+
+# ensure this script is run under the $SLODATA_WORKING
+# directory
+
+. $SLODPLA_BIN/check-safewrite.sh
+
+
+# Option 1 on command line:  site's setSpec for the OAI set.
+# This will be used to lookup the metadataPrefix in MySQL.
 cat <<EOF
 
 With this script, you will add a new dataset for harvesting into DPLA via Ohio Digital Network.
@@ -27,7 +60,7 @@ EOF
 # Query MySQL for existing provider names, dump to screen for user to select
 # if the provider has previously submitted data to ODN.
 
-mysql -N -e "select distinct providerName from source;"  slo_aggregator | sed -e 's/^/    /g'
+mysql -N -e "select distinct name from provider order by name;"  slo_aggregator | sed -e 's/^/    /g'
 
 while [ "$PROVIDER" == '' ]
 do
@@ -66,30 +99,38 @@ EOF
 URL=''
 while [ "$URL" == '' ]
 do
-cat <<EOF
+  cat <<EOF
 Please enter the base OAI-PMH URL for the OAI server hosting this dataset (including the http://)
 and hit ENTER:
 EOF
-echo -n ' >>> '
-read URL
+  echo -n ' >>> '
+  read URL
 
-if [ "$URL" == '' ]
-then
+  URLtmp=`echo "$URL" |  sed -e 's/ //g' -e 's+/$++g'`
+  URL=$URLtmp
+
+  if [ "$URL" == '' ]
+  then
     echo "Error:  You must provide a URL for OAI-PMH harvesting"
-elif [ "$URL" != "$(echo $URL| sed -e 's/ //g')" ]
-then
-    echo "Error:  The URL must begin with http"
+  elif [ "${URL:0:5}" != 'http:' ] && [ "${URL:0:6}" != 'https:' ]
+  then
+    echo "Error:  The URL must begin with http or https"
     URL=''
-fi
+  fi
 done
+
+# Check for problems with intermediate SSL certificates.
+# Failure at this point aborts the script.
+. $SLODPLA_BIN/check-https-connection.sh
+
 
 echo "  ...retrieving data..."
 
 # harvest the list of OAI-PMH metadataFormats from the server and dump to file for later reference
 rm -f MetadataFormats.xml
-wget  "$URL"'?verb=ListMetadataFormats' -O ListMetadataFormats.xml -o /dev/null
+wget  "$URL"'?verb=ListMetadataFormats' -O ListMetadataFormats.xml --header="Accept: text/html"  --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36" -o /dev/null
 
-# eliminate the "http[s]" prefix from the OAI-PMH harveste URL, as some of the datasets
+# eliminate the "http[s]" prefix from the OAI-PMH harvester URL, as some of the datasets
 # are being harvested from one version of the URL for one collection, and other collections
 # are being harvested from the other version of the URL.  This catches both variants 
 # when we search MySQL for other sets harvested from this server.
@@ -224,7 +265,52 @@ done
 # to get that information
 METADATA_FORMAT_SCHEMA=$(java net.sf.saxon.Transform -xsl:$SLODPLA_LIB/get-metadataFormat-schema.xsl -s:ListMetadataFormats.xml METADATA_FORMAT=$METADATA_FORMAT ) 
 
-# set default values for other settings
+
+# Should this set be enrolled in the Wikimedia program?  If so, then we will 
+# add dcterms:isReferencedBy elements to qualifying records later in the process.
+
+IIIF_PARTICIPANT=''
+while [ "$IIIF_PARTICIPANT" != 'y' ] && [ "$IIIF_PARTICIPANT" != 'Y' ] && [ "$IIIF_PARTICIPANT" != 'n' ] && [ "$IIIF_PARTICIPANT" != 'N' ]
+do
+cat <<EOF
+
+Enroll this collection in Wikimedia / IIIF processing?  y/n
+EOF
+echo -n ' >>> '
+read IIIF_PARTICIPANT
+done
+
+
+
+# Query MySQL for existing sourceCMS values, dump to screen 
+# for user to select as an option.
+
+cat <<EOF
+
+Do you know which Content Management System is being used to host
+this collection?  Here's a list of those that are currently in
+use:
+
+EOF
+mysql -N -e "select distinct sourceCMS from source;"  slo_aggregator | sed -e 's/^/    /g'
+
+SOURCE_CMS=''
+while [ "$SOURCE_CMS" == '' ]
+do
+cat <<EOF
+
+If the Content Management System for this collection isn't listed
+here, then just hit <ENTER> to set it to "undetermined"; this will
+have no affect upon the functionality of the system, and is only
+used for informational purposes.
+
+EOF
+echo -n ' >>> '
+read SOURCE_CMS
+done
+
+
+# Set default values for other settings
 STATUS='unharvested'
 EXPORT_DIR_PATH="/opt/repoxdata/$ODN_SETSPEC/export"
 TYPE_OF_SOURCE='DataSourceOai'
@@ -238,6 +324,7 @@ COUNTDATE=$(date +"%Y-%m-%d %H:%M:%S")
 # Create an initial base XSLT transform file for this dataset
 cp $SLODPLA_LIB/00_STARTINGPOINT-COLL.xsl $SLODPLA_LIB/bySet/base-transform/$ODN_SETSPEC.xsl
 cat <<EOF
+
 ===================================================================================
 XSLT Transform created at:
 
@@ -276,7 +363,9 @@ cat >add-source_$ODN_SETSPEC.sql <<EOF
             odnSet,
             sourcesDirPath,
             retrieveStrategy,
-            splitRecordsRecordXpath)
+            splitRecordsRecordXpath,
+            sourceCMS,
+            iiifParticipant)
     values
            ('$PROVIDER',
             '$METADATA_FORMAT',
@@ -290,7 +379,9 @@ cat >add-source_$ODN_SETSPEC.sql <<EOF
             '$ODN_SETSPEC',
             '$SOURCES_DIR_PATH',
             '$RETRIEVE_STRATEGY',
-            '$SPLIT_RECORDS');
+            '$SPLIT_RECORDS',
+            '$SOURCE_CMS',
+            '$IIIF_PARTICIPANT');
 
   insert into
     recordcount
@@ -298,10 +389,12 @@ cat >add-source_$ODN_SETSPEC.sql <<EOF
           recordcount,
           lastLineCounted,
           deletedRecords,
+          iiifViable,
           lastCountDate,
           lastCountWithChangesDate)
    values
          ('$ODN_SETSPEC',
+          0,
           0,
           0,
           0,
@@ -319,15 +412,62 @@ cat >add-source_$ODN_SETSPEC.sql <<EOF
           'true');
 
 EOF
-# cat add-source_$ODN_SETSPEC.sql
 
-cat <<EOF
 
-The SQL to add the new set has been dumped to:  add-source_$ODN_SETSPEC.sql"
+# If they're giving us a new provider, then we need to insert that
+# as a record in MySQL; test to see if it's new.
+PROVIDER_TEST=$(mysql -sNe "select count(*) from provider where name='${PROVIDER}';" )
+if [ "$PROVIDER_TEST" != '1' ]
+then
+cat >>add-source_$ODN_SETSPEC.sql <<EOF
 
-If it looks good, you can load it via:
+  insert into 
+    provider
+        (name,
+         description,
+         odnProvider)
+    values
+         ('$PROVIDER',
+          '$PROVIDER',
+          '$PROVIDER');     
+EOF
 
-    mysql < add-source_$ODN_SETSPEC.sql
+fi
+
+# add the configuration to MySQL.
+# The SQL to add the new set has been dumped to:  add-source_$ODN_SETSPEC.sql"
+# If it looks good, you can load it via:
+
+mysql < add-source_$ODN_SETSPEC.sql
+
+
+cat << EOF
+
+The new set has been added to MySQL.
+
+To setup a directory as a temporary working area for analyzing the data,
+run the following command:
+
+    gu-setup $ODN_SETSPEC
+
+
+Since this is a brand new set, you'll need to inventory the metadata fields
+that were sent with the OAI-PMH XML.  This information will then be used by
+the contributor to map their fields to the ODN equivalents.
+
+Start by harvesting the new collection via the following command:
+
+    get-raw.sh
+
+After the harvest completes, you can get a list of all fields sent which 
+contain metadata (as well as a few other details) via the following command:
+
+    dissect-raw.sh
+
+This should create a file called "fields-with-metadata-in-raw.txt" which will
+contain that information.  Copy that into the appropriate spreadsheet for
+sending back to the contributor.  A copy of that spreadsheet can be found at
+$SLODPLA_ROOT/00_FIELD_LISTING.xlsx
 
 EOF
 

@@ -64,6 +64,13 @@
 ##  a.k.a. "bt"
 
 
+# ensure this script is run under the $SLODATA_WORKING
+# directory; abort if running elsewhere.
+echo ""
+. $SLODPLA_BIN/check-safewrite.sh
+
+
+
 ###
 ### determine which set we're processing
 ###
@@ -213,7 +220,7 @@ if [ -f $SLODPLA_LIB/bySet/filter-transform/$ODN_SETSPEC.xsl ]
 then
     echo
     echo '************************************************'
-    echo "Found collection-specific transform; running it."
+    echo "Found filter-transform for this set; running it."
     java net.sf.saxon.Transform -xsl:$SLODPLA_LIB/bySet/filter-transform/$ODN_SETSPEC.xsl -s:$ODN_SETSPEC-odn-transformed-qdc.xml -o:2.dat
     mv 2.dat $ODN_SETSPEC-odn-transformed-qdc.xml
 fi
@@ -221,30 +228,29 @@ fi
 
 xmllint --format $ODN_SETSPEC-odn-transformed-qdc.xml >2.txt
 
-mv 2.txt ODN_SETSPEC-odn-transformed-qdc.xml
+mv 2.txt $ODN_SETSPEC-odn-transformed-qdc.xml
 
 cp $ODN_SETSPEC-odn-transformed-qdc.xml $ODN_SETSPEC-DPLA_ready.xml
 
 sed -e "s/^[ ]*//g" $ODN_SETSPEC-odn-transformed-qdc.xml > 2t.xml
 
-
+BEFORECOUNT=$(java net.sf.saxon.Transform -xsl:$SLODPLA_LIB/count-records.xsl -s:$SLODATA_ARCHIVIZED/$ODN_SETSPEC-odn-$ORIGINAL_METADATA_FORMAT.xml)
+AFTERCOUNT=$(java  net.sf.saxon.Transform -xsl:$SLODPLA_LIB/count-records.xsl -s:2t.xml)
 
 tee outgt.txt <<EOF
 
+Record counts:
+
+  Pre-transform:  $BEFORECOUNT
+  Post-transform: $AFTERCOUNT
+
 Perform some basic diagnostics on the data:
 
-     review-qdc-conversion.sh $ODN_SETSPEC-odn-transformed-qdc.xml
+    review-base-transform.sh $ODN_SETSPEC-odn-transformed-qdc.xml
 
 To add unvalidated IIIF to the data, run:
 
-     iiif-blanket-insert.sh  $ODN_SETSPEC-odn-transformed-qdc.xml
+    iiif-insert.sh  $ODN_SETSPEC-odn-transformed-qdc.xml
 
 EOF
-
-
-
-
-
-
-
 

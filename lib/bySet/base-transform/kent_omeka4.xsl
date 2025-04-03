@@ -62,11 +62,11 @@
       <xsl:apply-templates select="dcterms:alternative"      mode="odn"/>                     <!-- create dcterms:alternative                                 -->
       <xsl:apply-templates select="dc:contributor"           mode="odn"/>                     <!-- create dcterms:contributor                                 -->
       <xsl:apply-templates select="dc:description"           mode="kent_omeka4"/>             <!-- create dcterms:description                                 -->
-      <xsl:apply-templates select="dcterms:extent"           mode="odn"/>                     <!-- create dcterms:extent                                      -->
+      <xsl:apply-templates select="dcterms:extent"           mode="kent_omeka4"/>             <!-- create dcterms:extent                                      -->
       <xsl:apply-templates select="dc:duration"              mode="kent_omeka4"/>             <!-- create dcterms:extent                                      -->
       <xsl:apply-templates select="dc:extent"                mode="kent_omeka4"/>             <!-- create dcterms:extent                                      -->
                                                                                               <!-- dcterms:identifier is created above as part of the edm:isShownAt transform -->
-      <xsl:apply-templates select="dc:publisher"             mode="odn"/>                     <!-- create dcterms:publisher                                   -->
+      <xsl:apply-templates select="dc:publisher"             mode="kent_omeka4"/>             <!-- create dcterms:publisher                                   -->
       <xsl:apply-templates select="dc:relation"              mode="odn"/>                     <!-- create dc:relation                                         -->
       <xsl:apply-templates select="dc:relation.ispartof"     mode="kent_omeka4"/>             <!-- create dc:relation                                         -->
       <xsl:apply-templates select="dc:repository"            mode="kent_omeka4"/>             <!-- create dc:relation                                         -->
@@ -121,22 +121,26 @@
   <xsl:template match="dcterms:spatial" mode="kent_omeka4"/>
 
   <xsl:template match="dc:duration" mode="kent_omeka4">
-    <xsl:element name="dcterms:extent" namespace="http://purl.org/dc/terms/">
-      <xsl:value-of select="."/>
-    </xsl:element>
+    <xsl:for-each select="tokenize(normalize-space(.), ';')">
+      <xsl:if test="normalize-space(.) != ''">
+        <xsl:element name="dcterms:extent" namespace="http://purl.org/dc/terms/">
+          <xsl:value-of select="."/>
+        </xsl:element>
+      </xsl:if>
+    </xsl:for-each>
   </xsl:template>
 
   <xsl:template match="dc:extent" mode="kent_omeka4">
-    <xsl:element name="dcterms:extent" namespace="http://purl.org/dc/terms/">
-      <xsl:value-of select="."/>
-    </xsl:element>
+    <xsl:for-each select="tokenize(normalize-space(.), ';')">
+      <xsl:if test="normalize-space(.) != ''">
+        <xsl:element name="dcterms:extent" namespace="http://purl.org/dc/terms/">
+          <xsl:value-of select="normalize-space(.)"/>
+        </xsl:element>
+      </xsl:if>
+    </xsl:for-each>
   </xsl:template>
 
-  <xsl:template match="dc:relation.ispartof" mode="kent_omeka4">
-    <xsl:element name="dc:relation" namespace="http://purl.org/dc/elements/1.1/">
-      <xsl:value-of select="."/>
-    </xsl:element>
-  </xsl:template>
+  <xsl:template match="dc:relation.ispartof" mode="kent_omeka4"/>
 
   <xsl:template match="dc:repository" mode="kent_omeka4">
     <xsl:element name="dc:relation" namespace="http://purl.org/dc/elements/1.1/">
@@ -164,6 +168,16 @@
     <xsl:for-each select="tokenize(normalize-space(.), ';')">
       <xsl:if test="normalize-space(.) != ''">
         <xsl:element name="dc:date" namespace="http://purl.org/dc/elements/1.1/">
+          <xsl:value-of select="normalize-space(.)"/>
+        </xsl:element>
+      </xsl:if>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="dc:publisher" mode="kent_omeka4">
+    <xsl:for-each select="tokenize(normalize-space(.), ';')">
+      <xsl:if test="normalize-space(.) != ''">
+        <xsl:element name="dcterms:publisher" namespace="http://purl.org/dc/terms/">
           <xsl:value-of select="normalize-space(.)"/>
         </xsl:element>
       </xsl:if>
